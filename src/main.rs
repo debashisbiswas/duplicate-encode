@@ -1,5 +1,7 @@
 use counter::Counter;
 use itertools::Itertools;
+use num_format::format::Locale;
+use num_format::ToFormattedString;
 use rand::distributions::Uniform;
 use rand::{prelude::StdRng, Rng, SeedableRng};
 use std::collections::HashMap;
@@ -102,7 +104,7 @@ fn duplicate_encode_itertools(text: &str) -> String {
     return result;
 }
 
-// Similar to duplicate_encode_counter, but using the map function to build
+// Similar to duplicate_encode_itertools, but using the map function to build
 // the final string using an iterator.
 // If anything, this is only slightly slower. This might be because the space
 // for the String built at the end is not allocated in advance.
@@ -117,7 +119,8 @@ fn duplicate_encode_map(text: &str) -> String {
 fn test_functions(functions: Vec<NamedFunction>) {
     println!(
         "Counting {} characters per test (over {} tests)",
-        CHARS_PER_TEST, NUMBER_OF_TEST_RUNS
+        CHARS_PER_TEST.to_formatted_string(&Locale::en),
+        NUMBER_OF_TEST_RUNS
     );
 
     print!("Generating random input...");
@@ -158,7 +161,7 @@ fn test_functions(functions: Vec<NamedFunction>) {
 }
 
 fn main() {
-    let functions = Vec::from([
+    let functions = vec![
         NamedFunction {
             name: "duplicate_encode",
             body: duplicate_encode,
@@ -183,6 +186,6 @@ fn main() {
             name: "duplicate_encode_map",
             body: duplicate_encode_map,
         },
-    ]);
+    ];
     test_functions(functions);
 }
