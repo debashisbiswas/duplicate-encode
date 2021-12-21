@@ -79,14 +79,27 @@ fn test_functions(functions: Vec<NamedFunction>) {
     let input_word = &input_word_chunk.as_str();
     println!(" took {} ms.", start.elapsed().as_millis());
 
-    println!("Running tests...");
-    for f in functions {
+    // Get the longest function name in the list for formatted printing.
+    let mut longest_fn_name = 0;
+    for f in functions.iter() {
+        let len = f.name.len();
+        if len > longest_fn_name {
+            longest_fn_name = len;
+        }
+    }
+
+    for f in functions.iter() {
         let start = Instant::now();
         for _ in 0..NUMBER_OF_TEST_RUNS {
             (f.body)(input_word);
         }
         let finish = start.elapsed();
-        println!("{} took {} seconds.", f.name, finish.as_secs_f32());
+        println!(
+            "{:<max_len$} | {} seconds",
+            f.name,
+            finish.as_secs_f32(),
+            max_len = longest_fn_name
+        );
     }
 }
 
