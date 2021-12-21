@@ -15,6 +15,7 @@ struct NamedFunction {
 }
 
 fn duplicate_encode(text: &str) -> String {
+    let text = text.to_ascii_lowercase();
     let mut counter: HashMap<char, usize> = HashMap::new();
     for c in text.chars() {
         if counter.contains_key(&c) {
@@ -33,6 +34,7 @@ fn duplicate_encode(text: &str) -> String {
 }
 
 fn duplicate_encode_capacity(text: &str) -> String {
+    let text = text.to_ascii_lowercase();
     let mut counter: HashMap<char, usize> = HashMap::new();
     for c in text.chars() {
         if counter.contains_key(&c) {
@@ -51,6 +53,7 @@ fn duplicate_encode_capacity(text: &str) -> String {
 }
 
 fn duplicate_encode_counter(text: &str) -> String {
+    let text = text.to_ascii_lowercase();
     let char_counts = text.chars().collect::<Counter<_>>();
     let mut result = String::with_capacity(text.len());
     for c in text.chars() {
@@ -58,6 +61,14 @@ fn duplicate_encode_counter(text: &str) -> String {
         result.push(if count == 1 { '(' } else { ')' });
     }
     return result;
+}
+
+fn duplicate_encode_map(text: &str) -> String {
+    let text = text.to_ascii_lowercase();
+    let counts = text.chars().collect::<Counter<_>>();
+    text.chars()
+        .map(|c| if counts[&c] == 1 { '(' } else { ')' })
+        .collect()
 }
 
 fn test_functions(functions: Vec<NamedFunction>) {
@@ -116,6 +127,10 @@ fn main() {
         NamedFunction {
             name: "duplicate_encode_counter",
             body: duplicate_encode_counter,
+        },
+        NamedFunction {
+            name: "duplicate_encode_map",
+            body: duplicate_encode_map,
         },
     ]);
     test_functions(functions);
