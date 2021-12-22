@@ -12,7 +12,7 @@ use std::time::Instant;
 const NUMBER_OF_TEST_RUNS: usize = 10;
 const INPUT_WORD_SIZE: usize = 1_000_000;
 const INPUT_WORD_NUM: usize = 10;
-const CHUNK_COUNT: usize = 1000;
+const CHUNK_COUNT: usize = 10_000;
 
 const TOTAL_INPUT_SIZE: usize = INPUT_WORD_SIZE * INPUT_WORD_NUM;
 const CHARS_PER_TEST: usize = TOTAL_INPUT_SIZE * INPUT_WORD_NUM;
@@ -68,12 +68,30 @@ fn duplicate_encode_capacity(text: &str) -> String {
     let text = text.to_ascii_lowercase();
     let mut counter: HashMap<char, usize> = HashMap::new();
     for c in text.chars() {
-        *counter.entry(c).or_insert(0) += 1;
+        *counter.entry(c).or_default() += 1;
     }
 
     let mut result = String::with_capacity(text.len());
     for c in text.chars() {
         let count = *counter.get(&c).unwrap();
+        result.push(if count == 1 { '(' } else { ')' });
+    }
+    result
+}
+
+// Similar to duplicate_encode_capacity, but rather than converting the
+// lower string into a lowercase version upfront, converts individual chars into
+// lowercase as needed.
+// No noticable difference in performance.
+fn duplicate_encode_lower(text: &str) -> String {
+    let mut counter: HashMap<char, usize> = HashMap::new();
+    for c in text.chars() {
+        *counter.entry(c.to_ascii_lowercase()).or_default() += 1;
+    }
+
+    let mut result = String::with_capacity(text.len());
+    for c in text.chars() {
+        let count = *counter.get(&c.to_ascii_lowercase()).unwrap();
         result.push(if count == 1 { '(' } else { ')' });
     }
     result
@@ -191,9 +209,28 @@ fn duplicate_encode_parallel(text: &str) -> String {
     text
 }
 
-fn test_functions(functions: Vec<NamedFunction>) {
+// There are better ways to test in Rust, but...
+fn test_functions(functions: &Vec<NamedFunction>) {
+    println!("Running tests...");
+    let inputs_and_outputs = [
+        ("din", "((("),
+        ("recede", "()()()"),
+        ("Success", ")())())"),
+        ("(( @", "))(("),
+    ];
+    for f in functions.iter() {
+        println!("Testing {}...", f.name);
+        for (input, expected) in inputs_and_outputs.iter() {
+            let actual = (f.body)(input);
+            assert_eq!(actual, expected.to_string(), "Wrong output for {}", f.name);
+        }
+    }
+    println!("All tests successfully passed.");
+}
+
+fn time_functions(functions: &Vec<NamedFunction>) {
     println!(
-        "Counting {} characters per test (over {} tests)",
+        "Timing functions on {} characters per test (over {} tests)",
         CHARS_PER_TEST.to_formatted_string(&Locale::en),
         NUMBER_OF_TEST_RUNS
     );
@@ -228,11 +265,16 @@ fn test_functions(functions: Vec<NamedFunction>) {
             max_len = longest_name_len
         );
     }
+
+    println!(
+        "Took {0:.3} seconds in total.",
+        start.elapsed().as_secs_f32()
+    );
 }
 
 fn main() {
     assert!(CHUNK_SIZE > 0);
-    test_functions(vec![
+    let functions = vec![
         NamedFunction {
             name: "duplicate_encode",
             body: duplicate_encode,
@@ -244,6 +286,10 @@ fn main() {
         NamedFunction {
             name: "duplicate_encode_capacity",
             body: duplicate_encode_capacity,
+        },
+        NamedFunction {
+            name: "duplicate_encode_lower",
+            body: duplicate_encode_lower,
         },
         NamedFunction {
             name: "duplicate_encode_counter",
@@ -273,5 +319,7 @@ fn main() {
             name: "duplicate_encode_parallel",
             body: duplicate_encode_parallel,
         },
-    ]);
+    ];
+    test_functions(&functions);
+    time_functions(&functions);
 }
