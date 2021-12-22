@@ -46,11 +46,11 @@ fn duplicate_encode(text: &str) -> String {
 // Similar to the duplicate_encode function, but using a different method of
 // populating the HashMap when counting elements at the beginning.
 // This method is noticably faster.
-fn duplicate_encode_better_insertion(text: &str) -> String {
+fn duplicate_encode_default(text: &str) -> String {
     let text = text.to_ascii_lowercase();
     let mut counter: HashMap<char, usize> = HashMap::new();
     for c in text.chars() {
-        *counter.entry(c).or_insert(0) += 1;
+        *counter.entry(c).or_default() += 1;
     }
 
     let mut result = String::new();
@@ -171,6 +171,9 @@ fn duplicate_encode_chunks(text: &str) -> String {
     text
 }
 
+// Similar to duplicate_encode_chunks, but by handling each chunk in parallel
+// using the "rayon" crate.
+// This is significantly faster than the other implementations.
 fn duplicate_encode_parallel(text: &str) -> String {
     let mut text = text.to_ascii_lowercase();
     let mut counts: HashMap<u8, usize> = HashMap::new();
@@ -210,13 +213,7 @@ fn test_functions(functions: Vec<NamedFunction>) {
     println!(" took {} ms.", start.elapsed().as_millis());
 
     // Get the longest function name in the list for formatted printing.
-    let mut longest_name_len = 0;
-    for f in functions.iter() {
-        let len = f.name.len();
-        if len > longest_name_len {
-            longest_name_len = len;
-        }
-    }
+    let longest_name_len = functions.iter().map(|f| f.name.len()).max().unwrap();
 
     for f in functions.iter() {
         let start = Instant::now();
@@ -241,8 +238,8 @@ fn main() {
             body: duplicate_encode,
         },
         NamedFunction {
-            name: "duplicate_encode_better_insertion",
-            body: duplicate_encode_better_insertion,
+            name: "duplicate_encode_default",
+            body: duplicate_encode_default,
         },
         NamedFunction {
             name: "duplicate_encode_capacity",
