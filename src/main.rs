@@ -4,13 +4,19 @@ use num_format::format::Locale;
 use num_format::ToFormattedString;
 use rand::distributions::Uniform;
 use rand::{prelude::StdRng, Rng, SeedableRng};
+use rayon::iter::ParallelIterator;
+use rayon::slice::ParallelSliceMut;
 use std::collections::HashMap;
 use std::time::Instant;
 
 const NUMBER_OF_TEST_RUNS: usize = 10;
 const INPUT_WORD_SIZE: usize = 1_000_000;
 const INPUT_WORD_NUM: usize = 10;
-const CHARS_PER_TEST: usize = NUMBER_OF_TEST_RUNS * INPUT_WORD_SIZE * INPUT_WORD_NUM;
+const CHUNK_COUNT: usize = 1000;
+
+const TOTAL_INPUT_SIZE: usize = INPUT_WORD_SIZE * INPUT_WORD_NUM;
+const CHARS_PER_TEST: usize = TOTAL_INPUT_SIZE * INPUT_WORD_NUM;
+const CHUNK_SIZE: usize = TOTAL_INPUT_SIZE / CHUNK_COUNT;
 
 struct NamedFunction {
     name: &'static str,
@@ -34,7 +40,7 @@ fn duplicate_encode(text: &str) -> String {
         let count = *counter.get(&c).unwrap();
         result.push(if count == 1 { '(' } else { ')' });
     }
-    return result;
+    result
 }
 
 // Similar to the duplicate_encode function, but using a different method of
@@ -52,7 +58,7 @@ fn duplicate_encode_better_insertion(text: &str) -> String {
         let count = *counter.get(&c).unwrap();
         result.push(if count == 1 { '(' } else { ')' });
     }
-    return result;
+    result
 }
 
 // Similar to duplicate_encode_better_insertion, but using String::with_capacity
@@ -70,7 +76,7 @@ fn duplicate_encode_capacity(text: &str) -> String {
         let count = *counter.get(&c).unwrap();
         result.push(if count == 1 { '(' } else { ')' });
     }
-    return result;
+    result
 }
 
 // Similar to duplicate_encode_capacity, but using Counter from the counter
@@ -86,7 +92,7 @@ fn duplicate_encode_counter(text: &str) -> String {
         let count = counts[&c];
         result.push(if count == 1 { '(' } else { ')' });
     }
-    return result;
+    result
 }
 
 // Similar to duplicate_encode_counter, but using itertools to count the elements.
@@ -101,7 +107,7 @@ fn duplicate_encode_itertools(text: &str) -> String {
         let count = counts[&c];
         result.push(if count == 1 { '(' } else { ')' });
     }
-    return result;
+    result
 }
 
 // Similar to duplicate_encode_itertools, but using the map function to build
@@ -114,6 +120,72 @@ fn duplicate_encode_map(text: &str) -> String {
     text.chars()
         .map(|c| if counts[&c] == 1 { '(' } else { ')' })
         .collect()
+}
+
+// Similar to duplicate_encode_map, but iterating over bytes instead of chars.
+// Note that as_bytes() is used rather than bytes() to avoid copying the whole
+// input unnecessarily.
+// Slightly slower than duplicate_encode_map.
+fn duplicate_encode_bytes(text: &str) -> String {
+    let text = text.to_ascii_lowercase();
+    let counts = text.as_bytes().iter().counts();
+    text.as_bytes()
+        .iter()
+        .map(|b| if counts[&b] == 1 { '(' } else { ')' })
+        .collect()
+}
+
+// Similar to duplicate_encode_bytes, but avoiding an extra allocation.
+// to_ascii_lowercase allocates space for a new String, and this method
+// updates this String in place before returning it.
+// Slightly slower than duplicate_encode_map, but faster than the
+// duplicate_encode_bytes function.
+fn duplicate_encode_in_place(text: &str) -> String {
+    let mut text = text.to_ascii_lowercase();
+    let mut counts: HashMap<u8, usize> = HashMap::new();
+    for byte in text.as_bytes().iter() {
+        *counts.entry(*byte).or_default() += 1;
+    }
+    for byte in unsafe { text.as_bytes_mut() } {
+        *byte = if counts[byte] == 1 { b'(' } else { b')' };
+    }
+    text
+}
+
+// Similar to duplicate_encode_in_place, but using chunks.
+// No noticable difference in performance compared to duplicate_encode_in_place.
+fn duplicate_encode_chunks(text: &str) -> String {
+    let mut text = text.to_ascii_lowercase();
+    let mut counts: HashMap<u8, usize> = HashMap::new();
+    for byte in text.as_bytes().iter() {
+        *counts.entry(*byte).or_default() += 1;
+    }
+
+    unsafe { text.as_bytes_mut() }
+        .chunks_mut(CHUNK_SIZE)
+        .for_each(|chunk| {
+            for byte in chunk {
+                *byte = if counts[byte] == 1 { b'(' } else { b')' };
+            }
+        });
+    text
+}
+
+fn duplicate_encode_parallel(text: &str) -> String {
+    let mut text = text.to_ascii_lowercase();
+    let mut counts: HashMap<u8, usize> = HashMap::new();
+    for byte in text.as_bytes().iter() {
+        *counts.entry(*byte).or_default() += 1;
+    }
+
+    unsafe { text.as_bytes_mut() }
+        .par_chunks_mut(CHUNK_SIZE)
+        .for_each(|chunk| {
+            for byte in chunk {
+                *byte = if counts[byte] == 1 { b'(' } else { b')' };
+            }
+        });
+    text
 }
 
 fn test_functions(functions: Vec<NamedFunction>) {
@@ -133,7 +205,8 @@ fn test_functions(functions: Vec<NamedFunction>) {
         .map(char::from)
         .collect::<String>()
         .repeat(INPUT_WORD_NUM);
-    let input_word = &input_word_chunk.as_str();
+    let input_word = input_word_chunk.as_str();
+    assert_eq!(input_word.len(), TOTAL_INPUT_SIZE);
     println!(" took {} ms.", start.elapsed().as_millis());
 
     // Get the longest function name in the list for formatted printing.
@@ -161,7 +234,8 @@ fn test_functions(functions: Vec<NamedFunction>) {
 }
 
 fn main() {
-    let functions = vec![
+    assert!(CHUNK_SIZE > 0);
+    test_functions(vec![
         NamedFunction {
             name: "duplicate_encode",
             body: duplicate_encode,
@@ -186,6 +260,21 @@ fn main() {
             name: "duplicate_encode_map",
             body: duplicate_encode_map,
         },
-    ];
-    test_functions(functions);
+        NamedFunction {
+            name: "duplicate_encode_bytes",
+            body: duplicate_encode_bytes,
+        },
+        NamedFunction {
+            name: "duplicate_encode_in_place",
+            body: duplicate_encode_in_place,
+        },
+        NamedFunction {
+            name: "duplicate_encode_chunks",
+            body: duplicate_encode_chunks,
+        },
+        NamedFunction {
+            name: "duplicate_encode_parallel",
+            body: duplicate_encode_parallel,
+        },
+    ]);
 }
