@@ -1,1 +1,3 @@
-/target
+**/rust/target
+**/*.swp
+**/__pycache__
