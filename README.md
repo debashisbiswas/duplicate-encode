@@ -1,9 +1,11 @@
-# Readme
+# Duplicate Encode
 
 ## A Random Code Challenge
 
-A code challenge from Discord. We decided to play with optimization in
-different languages.
+A code challenge (or "kata") found on Codewars that we discussed on Discord.
+We decided to play with optimization in different languages.
+
+[Kata on Codewars](https://www.codewars.com/kata/54b42f9314d9229fd6000d9c)
 
 ## Problem Description Transcript
 
@@ -21,5 +23,5 @@ duplicate.
 "din"      => "((("
 "recede"   => "()()()"
 "Success"  => ")())())"
-"(( @"      => "))(("
+"(( @"     => "))(("
 ```
