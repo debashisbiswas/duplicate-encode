@@ -1,6 +1,6 @@
 use counter::Counter;
 use itertools::Itertools;
-use num_format::format::Locale;
+use num_format::Locale;
 use num_format::ToFormattedString;
 use rand::distributions::Uniform;
 use rand::{prelude::StdRng, Rng, SeedableRng};
