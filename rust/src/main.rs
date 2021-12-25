@@ -22,6 +22,7 @@ const CHUNK_SIZE: usize = TOTAL_INPUT_SIZE / CHUNK_COUNT;
 struct NamedFunction {
     name: &'static str,
     body: fn(&str) -> String,
+    enabled: bool,
 }
 
 /// The initial implementation.
@@ -259,7 +260,7 @@ fn test_functions(functions: &[NamedFunction]) {
         ("Success", ")())())"),
         ("(( @", "))(("),
     ];
-    for f in functions.iter() {
+    for f in functions.iter().filter(|f| f.enabled) {
         println!("Testing {}...", f.name);
         for (input, expected) in inputs_and_outputs.iter() {
             let actual = (f.body)(input);
@@ -293,7 +294,7 @@ fn time_functions(functions: &[NamedFunction]) {
     // Get the longest function name in the list for formatted printing.
     let longest_name_len = functions.iter().map(|f| f.name.len()).max().unwrap();
 
-    for f in functions.iter() {
+    for f in functions.iter().filter(|f| f.enabled) {
         let start = Instant::now();
         for _ in 0..NUMBER_OF_TEST_RUNS {
             (f.body)(input_word);
@@ -317,54 +318,68 @@ fn time_functions(functions: &[NamedFunction]) {
 
 fn main() {
     assert!(CHUNK_SIZE > 0);
+    // Using the "enabled" flag, choose which functions to include in the output.
+    // With this flag, you won't have to sit through tests you're not interested in.
     let functions = [
         NamedFunction {
             name: "duplicate_encode",
             body: duplicate_encode,
+            enabled: true,
         },
         NamedFunction {
             name: "duplicate_encode_default",
             body: duplicate_encode_default,
+            enabled: false,
         },
         NamedFunction {
             name: "duplicate_encode_capacity",
             body: duplicate_encode_capacity,
+            enabled: false,
         },
         NamedFunction {
             name: "duplicate_encode_lower",
             body: duplicate_encode_lower,
+            enabled: false,
         },
         NamedFunction {
             name: "duplicate_encode_counter",
             body: duplicate_encode_counter,
+            enabled: false,
         },
         NamedFunction {
             name: "duplicate_encode_itertools",
             body: duplicate_encode_itertools,
+            enabled: false,
         },
         NamedFunction {
             name: "duplicate_encode_map",
             body: duplicate_encode_map,
+            enabled: false,
         },
         NamedFunction {
             name: "duplicate_encode_bytes",
             body: duplicate_encode_bytes,
+            enabled: false,
         },
         NamedFunction {
             name: "duplicate_encode_in_place",
             body: duplicate_encode_in_place,
+            enabled: true,
         },
         NamedFunction {
             name: "duplicate_encode_chunks",
             body: duplicate_encode_chunks,
+            enabled: true,
         },
         NamedFunction {
             name: "duplicate_encode_parallel",
             body: duplicate_encode_parallel,
+            enabled: true,
         },
         NamedFunction {
             name: "duplicate_encode_track_seen",
             body: duplicate_encode_track_seen,
+            enabled: true,
         },
     ];
     test_functions(&functions);
