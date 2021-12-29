@@ -216,7 +216,24 @@ fn duplicate_encode_parallel(text: &str) -> String {
 /// seen before, we can make a decision about which character to add to the
 /// output without knowing the exact count of each byte.
 /// This implementation is faster than all of the other approaches I have tried
-/// above.
+/// above. A more specific description of the algorithm is detailed below.
+///
+/// Iterate through each char in the string, as bytes.
+/// For each byte, If we have already seen the current byte multiple times, we are
+/// certain the output will have a ')' at this location. However, if this is our
+/// first or second time seeing this byte, further processing is necessary.
+///
+/// If this is our first time seeing this byte, store it in the "seen_once"
+/// HashMap along with its index. If this is the last time we see this byte, the
+/// '(' we append to the output will be correct, but if we see it again later,
+/// we can use the index to replace this byte with ')'.
+///
+/// If this is our second time seeing this byte, we need to replace the first
+/// occurence with ')', track that we have seen it multiple times, and still
+/// append ')' at the end of the loop.
+///
+/// By the end of the loop, we should end up with a string which has all of the
+/// characters correctly encoded, and is the same length as the input.
 fn duplicate_encode_track_seen(text: &str) -> String {
     let mut seen_once: HashMap<u8, usize> = HashMap::new();
     let mut seen_multiple: HashSet<u8> = HashSet::new();
@@ -225,23 +242,11 @@ fn duplicate_encode_track_seen(text: &str) -> String {
     for (i, byte) in text.as_bytes().iter().enumerate() {
         let byte = byte.to_ascii_lowercase();
         let mut new_char = ')';
-        // If we have already seen the current byte multiple times, we are
-        // certain the output will have a ')' at this location. However,
-        // if this is our first or second time seeing this byte, further
-        // processing is necessary.
         if !seen_multiple.contains(&byte) {
             if let Some(first) = seen_once.remove(&byte) {
-                // If this is our second time seeing this byte, we need to replace
-                // the first occurence with ')', track that we have seen it
-                // multiple times, and still append ')' at the end of the loop.
                 output.replace_range(first..=first, ")");
                 seen_multiple.insert(byte);
             } else {
-                // If this is our first time seeing this byte, store it in
-                // the "seen_once" HashMap along with its index. If this is the
-                // last time we see this byte, the '(' we append to the output
-                // will be correct, but if we see it again later, we can use the
-                // index to replace this byte with ')'.
                 seen_once.insert(byte, i);
                 new_char = '(';
             }
