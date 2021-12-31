@@ -1,1 +1,1 @@
-from .duplicate_encode import DuplicateEncode
+from .duplicate_encode import *

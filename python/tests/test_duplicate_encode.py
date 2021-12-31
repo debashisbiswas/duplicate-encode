@@ -4,7 +4,7 @@ from functools import partial
 
 import pytest
 
-from duplicate_encode import DuplicateEncode
+import duplicate_encode
 
 INPUT_TEXT_CHUNK_SIZE = 10_000
 NUM_INPUT_TEXT_CHUNKS = 10
@@ -21,15 +21,15 @@ def input_text():
 
 
 @pytest.mark.parametrize("func", [
-    DuplicateEncode.oneline_list,
-    DuplicateEncode.oneline_gen,
-    DuplicateEncode.bash,
-    DuplicateEncode.bash_single_update_str_join_instead_of_concat,
-    DuplicateEncode.bash_single_update,
-    DuplicateEncode.bash_improved,
-    DuplicateEncode.bash_improved_single_update,
-    DuplicateEncode.oneline_vars,
-    DuplicateEncode.bash_single_lookup_and_update_str_join_instead_of_concat,
+    duplicate_encode.oneline_list,
+    duplicate_encode.oneline_gen,
+    duplicate_encode.oneline_vars,
+    duplicate_encode.bash,
+    duplicate_encode.bash_single_update,
+    duplicate_encode.bash_single_update_str_join_instead_of_concat,
+    duplicate_encode.bash_single_lookup_and_update_str_join_instead_of_concat,
+    duplicate_encode.bash_improved,
+    duplicate_encode.bash_improved_single_update,
 ])
 def test_funcs(func, input_text, benchmark):
     result = benchmark(func, input_text)
