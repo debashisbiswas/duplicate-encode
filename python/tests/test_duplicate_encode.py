@@ -31,7 +31,7 @@ def input_text():
     duplicate_encode.bash_improved,
     duplicate_encode.bash_improved_single_update,
 ])
-def test_funcs(func, input_text, benchmark):
+def test_benchmark_funcs_with_input_text(benchmark, func, input_text):
     result = benchmark(func, input_text)
 
     # Every character is always repeated because the input_text is chunked.
