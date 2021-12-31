@@ -29,6 +29,7 @@ def input_text():
     DuplicateEncode.bash_improved,
     DuplicateEncode.bash_improved_single_update,
     DuplicateEncode.oneline_vars,
+    DuplicateEncode.bash_single_lookup_and_update_str_join_instead_of_concat,
 ])
 def test_funcs(func, input_text, benchmark):
     result = benchmark(func, input_text)

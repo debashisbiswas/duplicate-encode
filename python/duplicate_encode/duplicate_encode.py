@@ -51,7 +51,9 @@ class DuplicateEncode:
 
     @staticmethod
     def bash_single_update_str_join_instead_of_concat(word):
-        """Bash's version - single update algorithm. using string.join instead of __radd__"""
+        """Bash's version - single update algorithm. using string.join instead
+        of __radd__.
+        """
         counter = {}
 
         for char in word:
@@ -59,6 +61,22 @@ class DuplicateEncode:
                 counter[char] = 1
             elif counter[char] == 1:
                 counter[char] = 2
+
+        return "".join(['(' if counter[char] == 1 else ')' for char in word])
+
+    @staticmethod
+    def bash_single_lookup_and_update_str_join_instead_of_concat(word):
+        """Bash's version - single lookup and update algorithm. using
+        string.join instead of __radd__.
+        """
+        counter = {}
+
+        for char in word:
+            match counter.get(char):
+                case None:
+                    counter[char] = 1
+                case 1:
+                    counter[char] = 2
 
         return "".join(['(' if counter[char] == 1 else ')' for char in word])
 
