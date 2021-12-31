@@ -1,4 +1,10 @@
-**/rust/target
+# Editors
 **/*.swp
+**/.vscode
+
+# Rust
+**/rust/target
+
+# Python
 **/__pycache__
-.vscode
+**/.pytest_cache
